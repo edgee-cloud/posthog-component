@@ -1,0 +1,30 @@
+manifest-version = 1
+
+[component]
+name = "Posthog"
+version = "1.0.0"
+category = "data-collection"
+subcategory = "analytics"
+icon-path = "posthog.png"
+description = '''
+This component enables seamless integration between [Edgee](https://www.edgee.cloud) and [PostHog](https://posthog.com/),
+allowing you to collect and forward analytics events to your posthog instance.
+'''
+documentation = "https://github.com/edgee-cloud/posthog-component"
+repository = "https://github.com/edgee-cloud/posthog-component"
+language = "Rust"
+wit-version = "1.0.0"
+
+[component.build]
+command = "cargo build --target wasm32-wasip2 --release --target-dir ./target && mv ./target/wasm32-wasip2/release/posthog.wasm ./posthog.wasm"
+output_path = "posthog.wasm"
+
+[component.settings.region]
+title = "Region"
+type = "string"
+required = true
+
+[component.settings.api_key]
+title = "API Key"
+type = "string"
+required = true
