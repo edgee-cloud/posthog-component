@@ -1,16 +1,16 @@
 manifest-version = 1
 
 [component]
-name = "Posthog"
-version = "1.0.0"
+name = "PostHog"
+version = "1.0.1"
 category = "data-collection"
 subcategory = "analytics"
 icon-path = "posthog.png"
 description = '''
 This component enables seamless integration between [Edgee](https://www.edgee.cloud) and [PostHog](https://posthog.com/),
-allowing you to collect and forward analytics events to your posthog instance.
+allowing you to collect and forward analytics events to your PostHog instance.
 '''
-documentation = "https://github.com/edgee-cloud/posthog-component"
+documentation = "https://www.edgee.cloud/docs/components/data-collection/posthog"
 repository = "https://github.com/edgee-cloud/posthog-component"
 language = "Rust"
 wit-version = "1.0.0"
