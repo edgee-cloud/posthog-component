@@ -9,7 +9,7 @@
 </p>
 </div>
 
-<h1 align="center">Posthog component for Edgee</h1>
+<h1 align="center">PostHog component for Edgee</h1>
 
 [![Coverage Status](https://coveralls.io/repos/github/edgee-cloud/posthog-component/badge.svg)](https://coveralls.io/github/edgee-cloud/posthog-component)
 [![GitHub issues](https://img.shields.io/github/issues/edgee-cloud/posthog-component.svg)](https://github.com/edgee-cloud/posthog-component/issues)
@@ -37,7 +37,7 @@ settings.api_key = "YOUR_API_KEY"
 ## Event Handling
 
 ### Event Mapping
-The component maps Edgee events to Posthog Event as follows:
+The component maps Edgee events to PostHog Event as follows:
 
 | Edgee Event | PostHog Event | Description |
 |-------------|----------------|-------------|
