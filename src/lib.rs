@@ -1,4 +1,5 @@
 use std::collections::HashMap;
+use url::Url;
 
 use crate::exports::edgee::components::data_collection::{Dict, EdgeeRequest, Event, HttpMethod};
 use exports::edgee::components::data_collection::{Data, Guest};
@@ -33,10 +34,34 @@ impl Guest for Component {
             // Create custom data
             let mut custom_data: HashMap<String, serde_json::Value> = HashMap::new();
 
+            let parsed_url = data.url.clone().parse::<Url>().unwrap();
+            let parsed_referer = data.referrer.clone().parse::<Url>().unwrap();
+
             custom_data.insert(
-                "$current_url".to_owned(),
-                serde_json::Value::String(data.url.clone()),
+                "$session_entry_url".to_owned(),
+                serde_json::Value::String(parsed_url.to_string()),
             );
+            custom_data.insert(
+                "$session_entry_host".to_owned(),
+                serde_json::Value::String(parsed_url.host_str().unwrap().to_string()),
+            );
+            custom_data.insert(
+                "$session_entry_pathname".to_owned(),
+                serde_json::Value::String(data.path.clone()),
+            );
+            custom_data.insert(
+                "title".to_owned(),
+                serde_json::Value::String(data.title.clone()),
+            );
+            custom_data.insert(
+                "$session_entry_url".to_owned(),
+                serde_json::Value::String(parsed_referer.to_string()),
+            );
+            custom_data.insert(
+                "$session_entry_referring_domain".to_owned(),
+                serde_json::Value::String(parsed_referer.domain().unwrap().to_string()),
+            );
+
             event.properties = Some(custom_data);
             Ok(build_edgee_request(posthog_payload, event))
         } else {
