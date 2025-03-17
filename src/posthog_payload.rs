@@ -41,7 +41,7 @@ impl PostHogEvent {
     pub fn new(edgee_event: &Event, event_name: &str) -> anyhow::Result<Self> {
         let posthog_event = PostHogEvent {
             event: event_name.to_string(),
-            distinct_id: edgee_event.context.user.user_id.clone(),
+            distinct_id: edgee_event.context.user.edgee_id.clone(),
             properties: Some(HashMap::new()),
         };
 
