@@ -54,7 +54,7 @@ impl Guest for Component {
                 serde_json::Value::String(data.title.clone()),
             );
             custom_data.insert(
-                "$session_entry_url".to_owned(),
+                "$session_entry_referrer".to_owned(),
                 serde_json::Value::String(parsed_referer.to_string()),
             );
             custom_data.insert(
