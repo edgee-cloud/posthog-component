@@ -93,8 +93,14 @@ impl Guest for Component {
                 return Err("Track name is not set".to_string());
             }
             let posthog_payload = Settings::new(settings_dict).map_err(|e| e.to_string())?;
-
-            let event = PostHogEvent::new(&edgee_event, &data.name).map_err(|e| e.to_string())?;
+            let track_data: HashMap<String, serde_json::Value> = data
+                .properties
+                .iter()
+                .map(|(k, v)| (k.clone(), serde_json::Value::String(v.clone())))
+                .collect();
+            let mut event =
+                PostHogEvent::new(&edgee_event, &data.name).map_err(|e| e.to_string())?;
+            event.properties.extend(track_data.into_iter());
             Ok(build_edgee_request(posthog_payload, event))
         } else {
             Err("Missing page data".to_string())
