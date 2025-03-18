@@ -51,7 +51,15 @@ impl Guest for Component {
                 serde_json::Value::String(parsed_url.host_str().unwrap().to_string()),
             );
             page_data.insert(
+                "$host".to_owned(),
+                serde_json::Value::String(parsed_url.host_str().unwrap().to_string()),
+            );
+            page_data.insert(
                 "$session_entry_pathname".to_owned(),
+                serde_json::Value::String(data.path.clone()),
+            );
+            page_data.insert(
+                "$pathname".to_owned(),
                 serde_json::Value::String(data.path.clone()),
             );
             page_data.insert(
@@ -64,6 +72,10 @@ impl Guest for Component {
             );
             page_data.insert(
                 "$session_entry_referring_domain".to_owned(),
+                serde_json::Value::String(parsed_referer.domain().unwrap().to_string()),
+            );
+            page_data.insert(
+                "$referring_domain".to_owned(),
                 serde_json::Value::String(parsed_referer.domain().unwrap().to_string()),
             );
 
