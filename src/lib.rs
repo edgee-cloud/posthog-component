@@ -79,7 +79,7 @@ impl Guest for Component {
                 serde_json::Value::String(parsed_referer.domain().unwrap().to_string()),
             );
 
-            event.properties.extend(page_data.into_iter());
+            event.properties.extend(page_data);
             Ok(build_edgee_request(posthog_payload, event))
         } else {
             Err("Missing page data".to_string())
@@ -100,7 +100,7 @@ impl Guest for Component {
                 .collect();
             let mut event =
                 PostHogEvent::new(&edgee_event, &data.name).map_err(|e| e.to_string())?;
-            event.properties.extend(track_data.into_iter());
+            event.properties.extend(track_data);
             Ok(build_edgee_request(posthog_payload, event))
         } else {
             Err("Missing page data".to_string())
@@ -125,7 +125,7 @@ impl Guest for Component {
                     .map(|(k, v)| (k.clone(), serde_json::Value::String(v.clone())))
                     .collect(),
             );
-            event.properties.extend(user_data.into_iter());
+            event.properties.extend(user_data);
             Ok(build_edgee_request(posthog_payload, event))
         } else {
             Err("Missing page data".to_string())
@@ -147,7 +147,7 @@ fn build_edgee_request(posthog_payload: Settings, event: PostHogEvent) -> EdgeeR
         .map(|(k, v)| (format!("${}", k), v));
 
     let merged_properties = posthog_map
-        .chain(event.properties.into_iter())
+        .chain(event.properties)
         .collect::<serde_json::Map<_, _>>();
 
     let body_payload = serde_json::json!({
