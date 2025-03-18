@@ -32,37 +32,42 @@ impl Guest for Component {
                 PostHogEvent::new(&edgee_event, "$pageview").map_err(|e| e.to_string())?;
 
             // Create custom data
-            let mut custom_data: HashMap<String, serde_json::Value> = HashMap::new();
+            let mut page_data: HashMap<String, serde_json::Value> = HashMap::new();
 
             let parsed_url = data.url.clone().parse::<Url>().unwrap();
             let parsed_referer = data.referrer.clone().parse::<Url>().unwrap();
 
-            custom_data.insert(
+            page_data.insert(
                 "$session_entry_url".to_owned(),
                 serde_json::Value::String(parsed_url.to_string()),
             );
-            custom_data.insert(
+
+            page_data.insert(
+                "$current_url".to_owned(),
+                serde_json::Value::String(parsed_url.to_string()),
+            );
+            page_data.insert(
                 "$session_entry_host".to_owned(),
                 serde_json::Value::String(parsed_url.host_str().unwrap().to_string()),
             );
-            custom_data.insert(
+            page_data.insert(
                 "$session_entry_pathname".to_owned(),
                 serde_json::Value::String(data.path.clone()),
             );
-            custom_data.insert(
+            page_data.insert(
                 "title".to_owned(),
                 serde_json::Value::String(data.title.clone()),
             );
-            custom_data.insert(
+            page_data.insert(
                 "$session_entry_referrer".to_owned(),
                 serde_json::Value::String(parsed_referer.to_string()),
             );
-            custom_data.insert(
+            page_data.insert(
                 "$session_entry_referring_domain".to_owned(),
                 serde_json::Value::String(parsed_referer.domain().unwrap().to_string()),
             );
 
-            event.properties = Some(custom_data);
+            event.properties.extend(page_data.into_iter());
             Ok(build_edgee_request(posthog_payload, event))
         } else {
             Err("Missing page data".to_string())
@@ -93,16 +98,16 @@ impl Guest for Component {
                 PostHogEvent::new(&edgee_event, "$indentify").map_err(|e| e.to_string())?;
 
             // Create custom data
-            let mut custom_data: HashMap<String, serde_json::Value> = HashMap::new();
+            let mut user_data: HashMap<String, serde_json::Value> = HashMap::new();
 
-            custom_data.insert(
+            user_data.insert(
                 "$set".to_owned(),
                 data.properties
                     .iter()
                     .map(|(k, v)| (k.clone(), serde_json::Value::String(v.clone())))
                     .collect(),
             );
-            event.properties = Some(custom_data);
+            event.properties.extend(user_data.into_iter());
             Ok(build_edgee_request(posthog_payload, event))
         } else {
             Err("Missing page data".to_string())
@@ -116,23 +121,31 @@ fn build_edgee_request(posthog_payload: Settings, event: PostHogEvent) -> EdgeeR
         String::from("application/json"),
     )];
 
+    let posthog_map = serde_json::to_value(&event.posthog_data)
+        .ok()
+        .and_then(|v| v.as_object().cloned())
+        .unwrap_or_default()
+        .into_iter()
+        .map(|(k, v)| (format!("${}", k), v));
+
+    let merged_properties = posthog_map
+        .chain(event.properties.into_iter())
+        .collect::<serde_json::Map<_, _>>();
+
+    let body_payload = serde_json::json!({
+        "properties": merged_properties,
+        "event": event.event,
+        "distinct_id": event.distinct_id,
+        "api_key": posthog_payload.api_key,
+    });
+
     let url = format!("https://{}.i.posthog.com/i/v0/e/", posthog_payload.region);
-    let payload = {
-        let mut payload = serde_json::to_value(&event).unwrap();
-        if let serde_json::Value::Object(ref mut map) = payload {
-            map.insert(
-                "api_key".to_string(),
-                serde_json::Value::String(posthog_payload.api_key.clone()),
-            );
-        }
-        payload
-    };
     EdgeeRequest {
         method: HttpMethod::Post,
         url,
         headers,
         forward_client_headers: true,
-        body: { serde_json::to_string(&payload).unwrap() },
+        body: { serde_json::to_string(&body_payload).unwrap() },
     }
 }
 
