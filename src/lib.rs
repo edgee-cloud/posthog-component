@@ -35,7 +35,11 @@ impl Guest for Component {
             let mut page_data: HashMap<String, serde_json::Value> = HashMap::new();
 
             let parsed_url = data.url.clone().parse::<Url>().unwrap();
-            let parsed_referer = data.referrer.clone().parse::<Url>().unwrap();
+            let parsed_referer: Option<Url> = if edgee_event.context.page.referrer.is_empty() {
+                None
+            } else {
+                Url::parse(&edgee_event.context.page.referrer).ok()
+            };
 
             page_data.insert(
                 "$session_entry_url".to_owned(),
@@ -66,18 +70,20 @@ impl Guest for Component {
                 "title".to_owned(),
                 serde_json::Value::String(data.title.clone()),
             );
-            page_data.insert(
-                "$session_entry_referrer".to_owned(),
-                serde_json::Value::String(parsed_referer.to_string()),
-            );
-            page_data.insert(
-                "$session_entry_referring_domain".to_owned(),
-                serde_json::Value::String(parsed_referer.domain().unwrap().to_string()),
-            );
-            page_data.insert(
-                "$referring_domain".to_owned(),
-                serde_json::Value::String(parsed_referer.domain().unwrap().to_string()),
-            );
+            if let Some(parsed_referer) = parsed_referer {
+                page_data.insert(
+                    "$session_entry_referrer".to_owned(),
+                    serde_json::Value::String(parsed_referer.to_string()),
+                );
+                page_data.insert(
+                    "$session_entry_referring_domain".to_owned(),
+                    serde_json::Value::String(parsed_referer.domain().unwrap().to_string()),
+                );
+                page_data.insert(
+                    "$referring_domain".to_owned(),
+                    serde_json::Value::String(parsed_referer.domain().unwrap().to_string()),
+                );
+            }
 
             event.properties.extend(page_data);
             Ok(build_edgee_request(posthog_payload, event))
@@ -104,13 +110,11 @@ impl Guest for Component {
             let mut page_data: HashMap<String, serde_json::Value> = HashMap::new();
 
             let parsed_url = edgee_event.context.page.url.clone().parse::<Url>().unwrap();
-            let parsed_referer = edgee_event
-                .context
-                .page
-                .referrer
-                .clone()
-                .parse::<Url>()
-                .unwrap();
+            let parsed_referer: Option<Url> = if edgee_event.context.page.referrer.is_empty() {
+                None
+            } else {
+                Url::parse(&edgee_event.context.page.referrer).ok()
+            };
 
             page_data.insert(
                 "$session_entry_url".to_owned(),
@@ -141,18 +145,74 @@ impl Guest for Component {
                 "title".to_owned(),
                 serde_json::Value::String(edgee_event.context.page.title.clone()),
             );
+            if let Some(parsed_referer) = parsed_referer {
+                page_data.insert(
+                    "$session_entry_referrer".to_owned(),
+                    serde_json::Value::String(parsed_referer.to_string()),
+                );
+                page_data.insert(
+                    "$session_entry_referring_domain".to_owned(),
+                    serde_json::Value::String(parsed_referer.domain().unwrap().to_string()),
+                );
+                page_data.insert(
+                    "$referring_domain".to_owned(),
+                    serde_json::Value::String(parsed_referer.domain().unwrap().to_string()),
+                );
+            }
+
+            event.properties.extend(page_data);
+            let mut page_data: HashMap<String, serde_json::Value> = HashMap::new();
+
+            let parsed_url = edgee_event.context.page.url.clone().parse::<Url>().unwrap();
+            let parsed_referer: Option<Url> = if edgee_event.context.page.referrer.is_empty() {
+                None
+            } else {
+                Url::parse(&edgee_event.context.page.referrer).ok()
+            };
+
             page_data.insert(
-                "$session_entry_referrer".to_owned(),
-                serde_json::Value::String(parsed_referer.to_string()),
+                "$session_entry_url".to_owned(),
+                serde_json::Value::String(parsed_url.to_string()),
+            );
+
+            page_data.insert(
+                "$current_url".to_owned(),
+                serde_json::Value::String(parsed_url.to_string()),
             );
             page_data.insert(
-                "$session_entry_referring_domain".to_owned(),
-                serde_json::Value::String(parsed_referer.domain().unwrap().to_string()),
+                "$session_entry_host".to_owned(),
+                serde_json::Value::String(parsed_url.host_str().unwrap().to_string()),
             );
             page_data.insert(
-                "$referring_domain".to_owned(),
-                serde_json::Value::String(parsed_referer.domain().unwrap().to_string()),
+                "$host".to_owned(),
+                serde_json::Value::String(parsed_url.host_str().unwrap().to_string()),
             );
+            page_data.insert(
+                "$session_entry_pathname".to_owned(),
+                serde_json::Value::String(edgee_event.context.page.path.clone()),
+            );
+            page_data.insert(
+                "$pathname".to_owned(),
+                serde_json::Value::String(edgee_event.context.page.path.clone()),
+            );
+            page_data.insert(
+                "title".to_owned(),
+                serde_json::Value::String(edgee_event.context.page.title.clone()),
+            );
+            if let Some(parsed_referer) = parsed_referer {
+                page_data.insert(
+                    "$session_entry_referrer".to_owned(),
+                    serde_json::Value::String(parsed_referer.to_string()),
+                );
+                page_data.insert(
+                    "$session_entry_referring_domain".to_owned(),
+                    serde_json::Value::String(parsed_referer.domain().unwrap().to_string()),
+                );
+                page_data.insert(
+                    "$referring_domain".to_owned(),
+                    serde_json::Value::String(parsed_referer.domain().unwrap().to_string()),
+                );
+            }
 
             event.properties.extend(page_data);
             Ok(build_edgee_request(posthog_payload, event))
@@ -299,7 +359,7 @@ mod tests {
             url: "https://example.com/full-url?test=1".to_string(),
             path: "/full-path".to_string(),
             search: "?test=1".to_string(),
-            referrer: "https://example.com/another-page".to_string(),
+            referrer: "".to_string(),
             properties: vec![
                 ("prop1".to_string(), "value1".to_string()),
                 ("prop2".to_string(), "10".to_string()),
