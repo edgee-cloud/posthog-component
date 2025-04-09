@@ -180,7 +180,7 @@ fn extract_page_data(page_event: &PageData) -> HashMap<String, serde_json::Value
             serde_json::Value::String(parsed_referer.domain().unwrap().to_string()),
         );
     }
-    return page_data;
+    page_data
 }
 
 #[cfg(test)]
