@@ -30,7 +30,9 @@ impl Guest for Component {
 
             let mut event =
                 PostHogEvent::new(&edgee_event, "$pageview").map_err(|e| e.to_string())?;
-
+            event
+                .properties
+                .extend(extract_page_data(&edgee_event.context.page));
             event.properties.extend(extract_page_data(data));
             Ok(build_edgee_request(posthog_payload, event))
         } else {
