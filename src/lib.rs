@@ -101,6 +101,60 @@ impl Guest for Component {
             let mut event =
                 PostHogEvent::new(&edgee_event, &data.name).map_err(|e| e.to_string())?;
             event.properties.extend(track_data);
+            let mut page_data: HashMap<String, serde_json::Value> = HashMap::new();
+
+            let parsed_url = edgee_event.context.page.url.clone().parse::<Url>().unwrap();
+            let parsed_referer = edgee_event
+                .context
+                .page
+                .referrer
+                .clone()
+                .parse::<Url>()
+                .unwrap();
+
+            page_data.insert(
+                "$session_entry_url".to_owned(),
+                serde_json::Value::String(parsed_url.to_string()),
+            );
+
+            page_data.insert(
+                "$current_url".to_owned(),
+                serde_json::Value::String(parsed_url.to_string()),
+            );
+            page_data.insert(
+                "$session_entry_host".to_owned(),
+                serde_json::Value::String(parsed_url.host_str().unwrap().to_string()),
+            );
+            page_data.insert(
+                "$host".to_owned(),
+                serde_json::Value::String(parsed_url.host_str().unwrap().to_string()),
+            );
+            page_data.insert(
+                "$session_entry_pathname".to_owned(),
+                serde_json::Value::String(edgee_event.context.page.path.clone()),
+            );
+            page_data.insert(
+                "$pathname".to_owned(),
+                serde_json::Value::String(edgee_event.context.page.path.clone()),
+            );
+            page_data.insert(
+                "title".to_owned(),
+                serde_json::Value::String(edgee_event.context.page.title.clone()),
+            );
+            page_data.insert(
+                "$session_entry_referrer".to_owned(),
+                serde_json::Value::String(parsed_referer.to_string()),
+            );
+            page_data.insert(
+                "$session_entry_referring_domain".to_owned(),
+                serde_json::Value::String(parsed_referer.domain().unwrap().to_string()),
+            );
+            page_data.insert(
+                "$referring_domain".to_owned(),
+                serde_json::Value::String(parsed_referer.domain().unwrap().to_string()),
+            );
+
+            event.properties.extend(page_data);
             Ok(build_edgee_request(posthog_payload, event))
         } else {
             Err("Missing page data".to_string())

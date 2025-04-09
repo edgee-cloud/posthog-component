@@ -63,16 +63,15 @@ impl PostHogEvent {
             posthog_event.posthog_data.browser_language = locale.clone();
         }
 
-        posthog_event.posthog_data.geoip_continent_name = Some(client.continent.clone());
-        posthog_event.posthog_data.geoip_country_code = Some(client.country_code.clone());
-        posthog_event.posthog_data.geoip_country_name = Some(client.country_name.clone());
-        posthog_event.posthog_data.geoip_subdivision_1_name = Some(client.region.clone());
-        posthog_event.posthog_data.geoip_city_name = Some(client.city.clone());
-        posthog_event.posthog_data.geoip_time_zone = Some(client.timezone.clone());
-
-        posthog_event.posthog_data.ip = Some(client.ip.clone());
-        posthog_event.posthog_data.os = Some(client.os_name.clone());
-        posthog_event.posthog_data.os_version = Some(client.os_version.clone());
+        posthog_event.posthog_data.geoip_continent_name = to_option(&client.continent);
+        posthog_event.posthog_data.geoip_country_code = to_option(&client.country_code);
+        posthog_event.posthog_data.geoip_country_name = to_option(&client.country_name);
+        posthog_event.posthog_data.geoip_subdivision_1_name = to_option(&client.region);
+        posthog_event.posthog_data.geoip_city_name = to_option(&client.city);
+        posthog_event.posthog_data.geoip_time_zone = to_option(&client.timezone);
+        posthog_event.posthog_data.ip = to_option(&client.ip);
+        posthog_event.posthog_data.os = to_option(&client.os_name);
+        posthog_event.posthog_data.os_version = to_option(&client.os_version);
         if edgee_event.context.client.screen_width.is_positive() {
             posthog_event.posthog_data.screen_width =
                 edgee_event.context.client.screen_width as i64;
@@ -126,4 +125,12 @@ pub(crate) struct PostHogData {
     pub geoip_time_zone: Option<String>,
 
     pub raw_user_agent: Option<String>,
+}
+
+fn to_option(value: &str) -> Option<String> {
+    if value.is_empty() {
+        None
+    } else {
+        Some(value.to_owned())
+    }
 }
