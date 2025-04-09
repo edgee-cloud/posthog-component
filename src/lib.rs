@@ -25,13 +25,67 @@ struct Component;
 
 impl Guest for Component {
     fn page(edgee_event: Event, settings_dict: Dict) -> Result<EdgeeRequest, String> {
-        if let Data::Page(ref _data) = edgee_event.data {
+        if let Data::Page(ref data) = edgee_event.data {
             let posthog_payload = Settings::new(settings_dict).map_err(|e| e.to_string())?;
 
             let mut event =
                 PostHogEvent::new(&edgee_event, "$pageview").map_err(|e| e.to_string())?;
 
-            event.properties.extend(extract_page_data(&edgee_event));
+            // Create custom data
+            let mut page_data: HashMap<String, serde_json::Value> = HashMap::new();
+
+            let parsed_url = data.url.clone().parse::<Url>().unwrap();
+            let parsed_referer: Option<Url> = if edgee_event.context.page.referrer.is_empty() {
+                None
+            } else {
+                Url::parse(&edgee_event.context.page.referrer).ok()
+            };
+
+            page_data.insert(
+                "$session_entry_url".to_owned(),
+                serde_json::Value::String(parsed_url.to_string()),
+            );
+
+            page_data.insert(
+                "$current_url".to_owned(),
+                serde_json::Value::String(parsed_url.to_string()),
+            );
+            page_data.insert(
+                "$session_entry_host".to_owned(),
+                serde_json::Value::String(parsed_url.host_str().unwrap().to_string()),
+            );
+            page_data.insert(
+                "$host".to_owned(),
+                serde_json::Value::String(parsed_url.host_str().unwrap().to_string()),
+            );
+            page_data.insert(
+                "$session_entry_pathname".to_owned(),
+                serde_json::Value::String(data.path.clone()),
+            );
+            page_data.insert(
+                "$pathname".to_owned(),
+                serde_json::Value::String(data.path.clone()),
+            );
+            page_data.insert(
+                "title".to_owned(),
+                serde_json::Value::String(data.title.clone()),
+            );
+            if let Some(parsed_referer) = parsed_referer {
+                page_data.insert(
+                    "$session_entry_referrer".to_owned(),
+                    serde_json::Value::String(parsed_referer.to_string()),
+                );
+                page_data.insert(
+                    "$session_entry_referring_domain".to_owned(),
+                    serde_json::Value::String(parsed_referer.domain().unwrap().to_string()),
+                );
+                page_data.insert(
+                    "$referring_domain".to_owned(),
+                    serde_json::Value::String(parsed_referer.domain().unwrap().to_string()),
+                );
+            }
+
+            event.properties.extend(page_data);
             Ok(build_edgee_request(posthog_payload, event))
         } else {
             Err("Missing page data".to_string())
@@ -53,7 +107,9 @@ impl Guest for Component {
             let mut event =
                 PostHogEvent::new(&edgee_event, &data.name).map_err(|e| e.to_string())?;
             event.properties.extend(track_data);
-            event.properties.extend(extract_page_data(&edgee_event));
+            event
+                .properties
+                .extend(extract_context_page_data(&edgee_event));
             Ok(build_edgee_request(posthog_payload, event))
         } else {
             Err("Missing page data".to_string())
@@ -78,7 +134,9 @@ impl Guest for Component {
                     .map(|(k, v)| (k.clone(), serde_json::Value::String(v.clone())))
                     .collect(),
             );
-            event.properties.extend(extract_page_data(&edgee_event));
+            event
+                .properties
+                .extend(extract_context_page_data(&edgee_event));
             event.properties.extend(user_data);
             Ok(build_edgee_request(posthog_payload, event))
         } else {
@@ -121,7 +179,7 @@ fn build_edgee_request(posthog_payload: Settings, event: PostHogEvent) -> EdgeeR
     }
 }
 
-fn extract_page_data(edgee_event: &Event) -> HashMap<String, serde_json::Value> {
+fn extract_context_page_data(edgee_event: &Event) -> HashMap<String, serde_json::Value> {
     let mut page_data: HashMap<String, serde_json::Value> = HashMap::new();
 
     let parsed_url = edgee_event.context.page.url.clone().parse::<Url>().unwrap();
