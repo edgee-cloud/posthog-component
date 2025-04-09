@@ -1,7 +1,8 @@
 use std::collections::HashMap;
+use url::Url;
 
 use crate::exports::edgee::components::data_collection::{Dict, EdgeeRequest, Event, HttpMethod};
-use exports::edgee::components::data_collection::{Data, Guest};
+use exports::edgee::components::data_collection::{Data, Guest, PageData};
 use posthog_payload::{PostHogEvent, Settings};
 mod posthog_payload;
 
@@ -29,15 +30,10 @@ impl Guest for Component {
 
             let mut event =
                 PostHogEvent::new(&edgee_event, "$pageview").map_err(|e| e.to_string())?;
-
-            // Create custom data
-            let mut custom_data: HashMap<String, serde_json::Value> = HashMap::new();
-
-            custom_data.insert(
-                "$current_url".to_owned(),
-                serde_json::Value::String(data.url.clone()),
-            );
-            event.properties = Some(custom_data);
+            event
+                .properties
+                .extend(extract_page_data(&edgee_event.context.page));
+            event.properties.extend(extract_page_data(data));
             Ok(build_edgee_request(posthog_payload, event))
         } else {
             Err("Missing page data".to_string())
@@ -51,8 +47,17 @@ impl Guest for Component {
                 return Err("Track name is not set".to_string());
             }
             let posthog_payload = Settings::new(settings_dict).map_err(|e| e.to_string())?;
-
-            let event = PostHogEvent::new(&edgee_event, &data.name).map_err(|e| e.to_string())?;
+            let track_data: HashMap<String, serde_json::Value> = data
+                .properties
+                .iter()
+                .map(|(k, v)| (k.clone(), serde_json::Value::String(v.clone())))
+                .collect();
+            let mut event =
+                PostHogEvent::new(&edgee_event, &data.name).map_err(|e| e.to_string())?;
+            event.properties.extend(track_data);
+            event
+                .properties
+                .extend(extract_page_data(&edgee_event.context.page));
             Ok(build_edgee_request(posthog_payload, event))
         } else {
             Err("Missing page data".to_string())
@@ -68,16 +73,19 @@ impl Guest for Component {
                 PostHogEvent::new(&edgee_event, "$indentify").map_err(|e| e.to_string())?;
 
             // Create custom data
-            let mut custom_data: HashMap<String, serde_json::Value> = HashMap::new();
+            let mut user_data: HashMap<String, serde_json::Value> = HashMap::new();
 
-            custom_data.insert(
+            user_data.insert(
                 "$set".to_owned(),
                 data.properties
                     .iter()
                     .map(|(k, v)| (k.clone(), serde_json::Value::String(v.clone())))
                     .collect(),
             );
-            event.properties = Some(custom_data);
+            event
+                .properties
+                .extend(extract_page_data(&edgee_event.context.page));
+            event.properties.extend(user_data);
             Ok(build_edgee_request(posthog_payload, event))
         } else {
             Err("Missing page data".to_string())
@@ -91,24 +99,88 @@ fn build_edgee_request(posthog_payload: Settings, event: PostHogEvent) -> EdgeeR
         String::from("application/json"),
     )];
 
+    let posthog_map = serde_json::to_value(&event.posthog_data)
+        .ok()
+        .and_then(|v| v.as_object().cloned())
+        .unwrap_or_default()
+        .into_iter()
+        .map(|(k, v)| (format!("${}", k), v));
+
+    let merged_properties = posthog_map
+        .chain(event.properties)
+        .collect::<serde_json::Map<_, _>>();
+
+    let body_payload = serde_json::json!({
+        "properties": merged_properties,
+        "event": event.event,
+        "distinct_id": event.distinct_id,
+        "api_key": posthog_payload.api_key,
+    });
+
     let url = format!("https://{}.i.posthog.com/i/v0/e/", posthog_payload.region);
-    let payload = {
-        let mut payload = serde_json::to_value(&event).unwrap();
-        if let serde_json::Value::Object(ref mut map) = payload {
-            map.insert(
-                "api_key".to_string(),
-                serde_json::Value::String(posthog_payload.api_key.clone()),
-            );
-        }
-        payload
-    };
     EdgeeRequest {
         method: HttpMethod::Post,
         url,
         headers,
         forward_client_headers: true,
-        body: { serde_json::to_string(&payload).unwrap() },
+        body: { serde_json::to_string(&body_payload).unwrap() },
     }
+}
+
+fn extract_page_data(page_event: &PageData) -> HashMap<String, serde_json::Value> {
+    let mut page_data: HashMap<String, serde_json::Value> = HashMap::new();
+
+    let parsed_url = page_event.url.clone().parse::<Url>().unwrap();
+    let parsed_referer: Option<Url> = if page_event.referrer.is_empty() {
+        None
+    } else {
+        Url::parse(&page_event.referrer).ok()
+    };
+
+    page_data.insert(
+        "$session_entry_url".to_owned(),
+        serde_json::Value::String(parsed_url.to_string()),
+    );
+
+    page_data.insert(
+        "$current_url".to_owned(),
+        serde_json::Value::String(parsed_url.to_string()),
+    );
+    page_data.insert(
+        "$session_entry_host".to_owned(),
+        serde_json::Value::String(parsed_url.host_str().unwrap().to_string()),
+    );
+    page_data.insert(
+        "$host".to_owned(),
+        serde_json::Value::String(parsed_url.host_str().unwrap().to_string()),
+    );
+    page_data.insert(
+        "$session_entry_pathname".to_owned(),
+        serde_json::Value::String(page_event.path.clone()),
+    );
+    page_data.insert(
+        "$pathname".to_owned(),
+        serde_json::Value::String(page_event.path.clone()),
+    );
+    page_data.insert(
+        "title".to_owned(),
+        serde_json::Value::String(page_event.title.clone()),
+    );
+    if let Some(parsed_referer) = parsed_referer {
+        page_data.insert(
+            "$session_entry_referrer".to_owned(),
+            serde_json::Value::String(parsed_referer.to_string()),
+        );
+        page_data.insert(
+            "$session_entry_referring_domain".to_owned(),
+            serde_json::Value::String(parsed_referer.domain().unwrap().to_string()),
+        );
+        page_data.insert(
+            "$referring_domain".to_owned(),
+            serde_json::Value::String(parsed_referer.domain().unwrap().to_string()),
+        );
+    }
+    page_data
 }
 
 #[cfg(test)]
@@ -189,7 +261,7 @@ mod tests {
             url: "https://example.com/full-url?test=1".to_string(),
             path: "/full-path".to_string(),
             search: "?test=1".to_string(),
-            referrer: "https://example.com/another-page".to_string(),
+            referrer: "".to_string(),
             properties: vec![
                 ("prop1".to_string(), "value1".to_string()),
                 ("prop2".to_string(), "10".to_string()),

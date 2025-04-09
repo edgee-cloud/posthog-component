@@ -2,7 +2,7 @@ manifest-version = 1
 
 [component]
 name = "PostHog"
-version = "1.0.1"
+version = "1.0.2"
 category = "data-collection"
 subcategory = "analytics"
 icon-path = "posthog.png"
@@ -23,8 +23,10 @@ output_path = "posthog.wasm"
 title = "Region"
 type = "string"
 required = true
+description = "Your PostHog region (e.g. 'eu', 'us', etc.)"
 
 [component.settings.api_key]
 title = "API Key"
 type = "string"
 required = true
+description = "Your PostHog project API key (the same you'd use on the client)"
