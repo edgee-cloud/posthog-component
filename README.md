@@ -26,7 +26,7 @@ This component enables seamless integration between [Edgee](https://www.edgee.cl
 3. Add the following configuration to your `edgee.toml`:
 
 ```toml
-[[destinations.data_collection]]
+[[components.data_collection]]
 id = "posthog"
 file = "/var/edgee/components/posthog.wasm"
 settings.region = "YOUR_POSTHOG_REGION"
@@ -50,7 +50,7 @@ The component maps Edgee events to PostHog Event as follows:
 
 ### Basic Configuration
 ```toml
-[[destinations.data_collection]]
+[[components.data_collection]]
 id = "posthog"
 file = "/var/edgee/components/posthog.wasm"
 settings.region = "YOUR_POSTHOG_REGION"
