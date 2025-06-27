@@ -104,7 +104,7 @@ fn build_edgee_request(posthog_payload: Settings, event: PostHogEvent) -> EdgeeR
         .and_then(|v| v.as_object().cloned())
         .unwrap_or_default()
         .into_iter()
-        .map(|(k, v)| (format!("${}", k), v));
+        .map(|(k, v)| (format!("${k}"), v));
 
     let merged_properties = posthog_map
         .chain(event.properties)
