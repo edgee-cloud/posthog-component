@@ -16,7 +16,7 @@ language = "Rust"
 wit-version = "1.0.0"
 
 [component.build]
-command = "cargo build --target wasm32-wasip2 --release --target-dir ./target && mv ./target/wasm32-wasip2/release/posthog.wasm ./posthog.wasm"
+command = "cargo build --target wasm32-wasip2 --release --target-dir ./target && rm -f ./posthog.wasm && mv ./target/wasm32-wasip2/release/posthog.wasm ./posthog.wasm"
 output_path = "posthog.wasm"
 
 [component.settings.region]
