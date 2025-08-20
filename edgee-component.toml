@@ -7,8 +7,46 @@ category = "data-collection"
 subcategory = "analytics"
 icon-path = "posthog.png"
 description = '''
-This component enables seamless integration between [Edgee](https://www.edgee.cloud) and [PostHog](https://posthog.com/),
-allowing you to collect and forward analytics events to your PostHog instance.
+# PostHog Analytics Component
+
+[https://www.edgee.cloud/edgee/posthog-analytics](https://www.edgee.cloud/edgee/posthog-analytics)
+
+## Overview
+
+The **PostHog Analytics** component by Edgee enables seamless integration of PostHog's analytics capabilities into your Edgee projects.
+This component allows you to collect and forward analytics events to your PostHog instance, providing powerful insights into user behavior and product usage.
+
+---
+
+## Key Features & Benefits
+
+### Features
+
+- **Edge Deployment**: Deploys analytics at the edge, reducing latency and improving performance.
+- **Privacy-Focused**: Designed with user privacy in mind, ensuring compliance with regulations.
+- **Open Source**: Built openly on GitHub, released under the AGPL license, and can be self-hosted.
+- **Comprehensive Analytics**: Supports event tracking, user identification, and session recording.
+- **Feature Flags**: Allows for experimentation and feature management.
+
+### Benefits
+
+- **Enhanced UX**: Faster load times and better performance for users.
+- **Compliance Ready**: Simplified alignment with privacy regulations.
+- **Fewer Third-Party Dependencies**: Reduces the need for external scripts.
+- **Easy Integration**: Quickly connects with Edgee projects and workflows.
+
+---
+
+## Use Cases
+
+- **Privacy-Compliant Analytics**: Collect and analyze user data without compromising privacy.
+- **Performance Optimization**: Offload analytics processing to the edge to improve website performance.
+- **Open-Source Solutions**: Utilize an open-source analytics tool that aligns with your organization's values.
+- **Simplified Integration**: Integrate analytics into your project without complex setups or embedding external scripts.
+
+---
+
+Additional resources: [PostHog Analytics Documentation](https://posthog.com/docs)
 '''
 documentation = "https://www.edgee.cloud/docs/components/data-collection/posthog"
 repository = "https://github.com/edgee-cloud/posthog-component"
