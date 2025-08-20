@@ -7,10 +7,6 @@ category = "data-collection"
 subcategory = "analytics"
 icon-path = "posthog.png"
 description = '''
-# PostHog Analytics Component
-
-[https://www.edgee.cloud/edgee/posthog-analytics](https://www.edgee.cloud/edgee/posthog-analytics)
-
 ## Overview
 
 The **PostHog Analytics** component by Edgee enables seamless integration of PostHog's analytics capabilities into your Edgee projects.
